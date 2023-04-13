@@ -1,0 +1,32 @@
+MATCH (srcVar:cVariable)
+CALL apoc.aware.path.expandConfig(srcVar, {
+    relationshipFilter: 'varWrite>,compVPwrite>',
+    labelFilter: 'cVariable',
+    minLevel: 2,
+    maxLevel: 2
+})
+YIELD path WITH path AS initVW, last(nodes(path)) AS initDstVar, srcVar.comp AS initComp
+WHERE srcVar.comp = initDstVar.comp
+
+CALL apoc.aware.path.extend(initVW, {
+    relationshipFilter: 'parWrite>,compVPwrite>',
+    labelFilter: 'cVariable',
+    minLevel: 2
+})
+YIELD path WITH path AS midFlow, nodes(path) AS nodes, last(nodes(path)) AS dstVar, initComp
+WITH dstVar.comp AS dstComp, midFlow, initComp
+WHERE length(midFlow) % 2 = 0 
+AND all(idx in range(2, size(nodes)-3, 2) WHERE 
+        nodes[idx].comp <> nodes[idx+2].comp)
+AND initComp <> nodes[3].comp AND initComp <> dstComp
+
+CALL apoc.aware.path.extend(midFlow, {
+    relationshipFilter: 'varInfFunc>',
+    labelFilter: 'cFunction',
+    minLevel: 1,
+    maxLevel:1
+})
+YIELD path WITH path, last(nodes(path)) AS dstFunc, initComp, dstComp
+WHERE initComp <> dstFunc.comp AND dstComp = dstFunc.comp
+
+RETURN path

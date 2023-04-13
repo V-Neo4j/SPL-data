@@ -1,0 +1,11 @@
+MATCH (srcVar:cVariable)
+CALL apoc.aware.path.expandConfig(srcVar, {
+    relationshipFilter: 'parWrite>, <parWrite',
+    labelFilter: 'cVariable',
+    minLevel: 2,
+    maxLevel:2
+})
+YIELD path WITH path, nodes(path) AS nodes
+WHERE nodes[0].comp <> nodes[1].comp AND nodes[1].comp <> nodes[2].comp AND nodes[0].comp <> nodes[2].comp
+
+RETURN path
